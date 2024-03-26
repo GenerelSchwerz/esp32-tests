@@ -1,0 +1,7 @@
+/home/generel/Documents/PlatformIO/Projects/esp32/webserver/build/CMakeFiles/unity.dir
+/home/generel/Documents/PlatformIO/Projects/esp32/webserver/build/CMakeFiles/edit_cache.dir
+/home/generel/Documents/PlatformIO/Projects/esp32/webserver/build/CMakeFiles/rebuild_cache.dir
+/home/generel/Documents/PlatformIO/Projects/esp32/webserver/build/CMakeFiles/list_install_components.dir
+/home/generel/Documents/PlatformIO/Projects/esp32/webserver/build/CMakeFiles/install.dir
+/home/generel/Documents/PlatformIO/Projects/esp32/webserver/build/CMakeFiles/install/local.dir
+/home/generel/Documents/PlatformIO/Projects/esp32/webserver/build/CMakeFiles/install/strip.dir

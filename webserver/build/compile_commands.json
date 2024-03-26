@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/generel/Documents/PlatformIO/Projects/esp32/webserver/build",
+  "command": "/usr/bin/gcc -I/home/generel/Documents/PlatformIO/Projects/esp32/webserver/.pio/libdeps/esp32dev/Unity/src -I/home/generel/Documents/PlatformIO/Projects/esp32/webserver/build -g -std=c11 -Waddress -Waggregate-return -Wformat-nonliteral -Wformat-security -Wformat -Winit-self -Wmissing-declarations -Wmissing-include-dirs -Wno-multichar -Wno-parentheses -Wno-type-limits -Wno-unused-parameter -Wunreachable-code -Wwrite-strings -Wpointer-arith -Werror -Wall -o CMakeFiles/unity.dir/src/unity.c.o -c /home/generel/Documents/PlatformIO/Projects/esp32/webserver/.pio/libdeps/esp32dev/Unity/src/unity.c",
+  "file": "/home/generel/Documents/PlatformIO/Projects/esp32/webserver/.pio/libdeps/esp32dev/Unity/src/unity.c",
+  "output": "CMakeFiles/unity.dir/src/unity.c.o"
+}
+]

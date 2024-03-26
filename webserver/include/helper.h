@@ -3,15 +3,8 @@
 
 #include <Arduino.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+String readSerialLine();
 
-// String readSerialLine();
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* HELPER_H */
 
