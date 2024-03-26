@@ -7,6 +7,7 @@
         "esp_intr_alloc.h": "c",
         "*.tcc": "cpp",
         "ostream": "cpp",
-        "cstdint": "cpp"
+        "cstdint": "cpp",
+        "iterator": "cpp"
     }
 }

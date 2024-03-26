@@ -10,6 +10,8 @@
 void sensor_init();
 void sensor_report(void* xTimer);
 
+extern volatile const float current_distance;
+
 // #ifdef __cplusplus
 // }
 // #endif

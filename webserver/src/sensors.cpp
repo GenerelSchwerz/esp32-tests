@@ -2,7 +2,6 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/queue.h"
 #include "esp_timer.h"
 #include "driver/gpio.h"
 #include <esp_log.h>
@@ -18,15 +17,14 @@ static const char* TAG = "HC-SR04";
 volatile uint32_t pulseDuration = 0;
 volatile uint64_t pulseStartTime = 0;
 
-static QueueHandle_t gpio_evt_queue = NULL;
 
+// expose readonly value to other files
+volatile float current_distance = 0.0;
 
 
 // GPIO interrupt handler
 void IRAM_ATTR gpio_isr_handler(void* arg) {
     uint32_t gpio_num = (uint32_t) arg;
-
-    ESP_LOGI(TAG, "Interrupt triggered");
 
     // Check if the interrupt is for the input pin
     if(gpio_num == hc_echoPin) {
@@ -42,15 +40,12 @@ void IRAM_ATTR gpio_isr_handler(void* arg) {
 }
 
 // Function to measure pulse duration
-uint32_t pulseIn(int delay) {
+uint32_t pulseIn() {
     // Reset pulse duration
     pulseDuration = 0;
 
     // Wait for pulse duration to be captured
-    while(pulseDuration == 0) {
-        ESP_LOGI(TAG, "Waiting for pulse duration...");
-        vTaskDelay(pdMS_TO_TICKS(delay));
-    }
+    while(pulseDuration == 0);
 
     return pulseDuration;
 }
@@ -75,7 +70,6 @@ void sensor_init() {
 
 
 void sensor_report(void* xTimer) {
-    ESP_LOGI(TAG, "Starting sensor task...");
     while (1) {
         gpio_set_level(hc_trigPin, 0);
         vTaskDelay(pdMS_TO_TICKS(2));
@@ -84,18 +78,18 @@ void sensor_report(void* xTimer) {
         vTaskDelay(pdMS_TO_TICKS(10));
         gpio_set_level(hc_trigPin, 0);
 
-        uint32_t duration = pulseIn(10);
-
+        uint32_t duration = pulseIn();
+   
         // Calculate distance in cm
         float distance = duration * SOUND_SPEED / 2;
 
         // Convert distance to inches
         float distanceIn =  distance * CM_TO_INCH;
 
-        ESP_LOGI(TAG, "Distance: %.2f inches, %.2f", distance, distanceIn);  
+        current_distance = distance;
+
+        ESP_LOGI(TAG, "Distance: %.2f cm, %.2f inches", distance, distanceIn);  
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-
-
 }

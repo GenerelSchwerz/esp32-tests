@@ -70,7 +70,9 @@ httpd_handle_t start_webserver(void)
         // Register URI handlers
         httpd_register_uri_handler(server, &index_html_uri);
         httpd_register_uri_handler(server, &index_css_uri);
+        httpd_register_uri_handler(server, &index_js_uri);
         httpd_register_uri_handler(server, &test_html_uri);
+        httpd_register_uri_handler(server, &ws_uri);
     }
     return server;
 }
@@ -94,28 +96,28 @@ extern "C" void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    // ESP_ERROR_CHECK(esp_netif_init());
-    // ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    // // esp_log_level_set("*", ESP_LOG_ERROR);
+    // esp_log_level_set("*", ESP_LOG_ERROR);
 
-    // ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
 
-    // char ssid[32];
-    // char password[64];
+    char ssid[32];
+    char password[64];
 
-    // promptResponse("Enter SSID: ", ssid, sizeof(ssid));
-    // ESP_LOGI(TAG, "Got SSID: %s", ssid);
+    promptResponse("Enter SSID: ", ssid, sizeof(ssid));
+    ESP_LOGI(TAG, "Got SSID: %s", ssid);
 
-    // promptResponse("Enter password: ", password, sizeof(password));
-    // ESP_LOGI(TAG, "Got password: %s", password);
+    promptResponse("Enter password: ", password, sizeof(password));
+    ESP_LOGI(TAG, "Got password: %s", password);
 
-    // wifi_init_sta(ssid, "");
-    // ESP_LOGI(TAG, "Connected to AP. Starting web server...");
+    wifi_init_sta(ssid, "");
+    ESP_LOGI(TAG, "Connected to AP. Starting web server...");
 
-    // // The server can be stopped using stop_webserver(server);
-    // httpd_handle_t server = start_webserver();
-    // ESP_LOGI(TAG, "Web server started!");
+    // The server can be stopped using stop_webserver(server);
+    httpd_handle_t server = start_webserver();
+    ESP_LOGI(TAG, "Web server started!");
 
 
     
