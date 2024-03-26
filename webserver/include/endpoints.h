@@ -20,6 +20,13 @@ extern httpd_uri_t index_js_uri;
 extern  httpd_uri_t test_html_uri;
 extern httpd_uri_t ws_uri;
 
+// do not expose server, no point.
+void start_webserver();
+void stop_webserver();
+
+// expose broadcast function
+void broadcast_message(char *data);
+
 // #ifdef __cplusplus
 // }
 // #endif

@@ -8,6 +8,10 @@
         "*.tcc": "cpp",
         "ostream": "cpp",
         "cstdint": "cpp",
-        "iterator": "cpp"
+        "iterator": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "typeinfo": "cpp"
     }
 }

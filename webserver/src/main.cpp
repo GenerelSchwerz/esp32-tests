@@ -59,31 +59,6 @@ void wifi_init_sta(const char *ssid, const char *password)
 }
 
 
-httpd_handle_t start_webserver(void)
-{
-    httpd_handle_t server = NULL;
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-
-    // Start the httpd server
-    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
-    if (httpd_start(&server, &config) == ESP_OK) {
-        // Register URI handlers
-        httpd_register_uri_handler(server, &index_html_uri);
-        httpd_register_uri_handler(server, &index_css_uri);
-        httpd_register_uri_handler(server, &index_js_uri);
-        httpd_register_uri_handler(server, &test_html_uri);
-        httpd_register_uri_handler(server, &ws_uri);
-    }
-    return server;
-}
-
-void stop_webserver(httpd_handle_t server)
-{
-    if (server) {
-        // Stop the httpd server
-        httpd_stop(server);
-    }
-}
 
 
 extern "C" void app_main(void)
@@ -115,10 +90,9 @@ extern "C" void app_main(void)
     wifi_init_sta(ssid, "");
     ESP_LOGI(TAG, "Connected to AP. Starting web server...");
 
-    // The server can be stopped using stop_webserver(server);
-    httpd_handle_t server = start_webserver();
+    // The server can be stopped using stop_webserver();
+    start_webserver();
     ESP_LOGI(TAG, "Web server started!");
-
 
     
     // Initialize sensor
@@ -134,4 +108,9 @@ extern "C" void app_main(void)
                 1,                   // Priority (1 is lowest priority)
                 NULL);               // Task handle
 
+
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    ESP_LOGI(TAG, "Sending message");
+    broadcast_message("Hello from ESP32!");
 }
