@@ -1,77 +1,116 @@
-#include <Arduino.h>
-
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <esp_system.h>
-#include <esp_http_server.h>
-
-#include "constants.h" // Include the header file for static files
-#include "helper.h" // Include the header file for utility functions
-#include "endpoints.h" // Include the header file for endpoint handlers
-
-
-
-bool server_started = false;
-httpd_handle_t server = NULL;
+#include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_log.h"
+#include "esp_system.h"
+#include "nvs_flash.h"
+#include "esp_netif.h"
+#include "esp_http_server.h"
 
 
+#include "constants.h" // Assuming this contains constants used in your project
+#include "helper.h"    // Utility functions you've defined
+#include "endpoints.h" // Endpoint handlers for the HTTP server
 
-void connectToWifi(const char* ssid, const char* password)
+static const char *TAG = "wifi softAP";
+
+httpd_handle_t start_webserver(void);
+void stop_webserver(httpd_handle_t server);
+void wifi_init_sta(const char* ssid, const char* passphrase);
+void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+
+
+void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-  WiFi.enableSTA(true);
-  
-  delay(2000);
-
-  WiFi.begin(ssid, password);
-  
-  Serial.print("Connecting to WiFi");
-
-  while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        ESP_LOGI(TAG, "Disconnected. Trying to reconnect...");
+        esp_wifi_connect();
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+        ESP_LOGI(TAG, "Got IP:" IPSTR, IP2STR(&event->ip_info.ip));
     }
-  Serial.println();
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
 }
 
-void beginServer()
+
+void wifi_init_sta(const char *ssid, const char *password)
 {
-  // Start the HTTP server
-  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-  if (httpd_start(&server, &config) == ESP_OK) {
-      // Register URI handlers
-      httpd_register_uri_handler(server, &index_html_uri);
-      httpd_register_uri_handler(server, &index_css_uri);
-      httpd_register_uri_handler(server, &test_html_uri);
-      server_started = true;
-  }
+   esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
+
+    wifi_config_t wifi_config = {};
+    strncpy((char*)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    strncpy((char*)wifi_config.sta.password, password, sizeof(wifi_config.sta.password));
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config((wifi_interface_t) ESP_IF_WIFI_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-void setup() {
-  Serial.begin(115200);
 
-  Serial.println("Starting HTTP Server");
-  
-  Serial.print("SSID?: ");
-  Serial.flush();
-  String ssid = readSerialLine();
-  Serial.println();
- 
-  Serial.print("Password?: ");
-  Serial.flush();
-  String password = readSerialLine();
-  Serial.println();
+httpd_handle_t start_webserver(void)
+{
+    httpd_handle_t server = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-  Serial.printf("Connecting to %s with password %s\n", ssid, password);
-
-  connectToWifi(ssid.c_str(), password.c_str());
-  beginServer();
+    // Start the httpd server
+    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
+    if (httpd_start(&server, &config) == ESP_OK) {
+        // Register URI handlers
+        httpd_register_uri_handler(server, &index_html_uri);
+        httpd_register_uri_handler(server, &index_css_uri);
+        httpd_register_uri_handler(server, &test_html_uri);
+    }
+    return server;
 }
 
-void loop() {
-  if (!server_started) return;
+void stop_webserver(httpd_handle_t server)
+{
+    if (server) {
+        // Stop the httpd server
+        httpd_stop(server);
+    }
+}
 
-  // impl. respond to serial data here (kill on ctrl+c, etc.)
+
+extern "C" void app_main(void)
+{
+    // Initialize NVS
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+      ESP_ERROR_CHECK(nvs_flash_erase());
+      ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    esp_log_level_set("*", ESP_LOG_ERROR);
+
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+
+    char ssid[32];
+    char password[64];
+
+    promptResponse("Enter SSID: ", ssid, sizeof(ssid));
+
+    printf("Got SSID: %s\n", ssid);
+
+    promptResponse("Enter password: ", password, sizeof(password));
+
+    printf("Got password: %s\n", password);
+
+    wifi_init_sta(ssid, password);
+
+    httpd_handle_t server = start_webserver();
+    // The server can be stopped using stop_webserver(server);
 }

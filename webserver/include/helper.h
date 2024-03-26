@@ -1,11 +1,8 @@
 #ifndef HELPER_H
 #define HELPER_H
 
-// #include <Arduino.h>
 
-// String readSerialLine();
-String readSerialLine();
-
+void promptResponse(const char* msg, char* ssid, size_t max_len);
 
 #endif /* HELPER_H */
 
