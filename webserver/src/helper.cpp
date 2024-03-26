@@ -7,7 +7,6 @@ String readSerialLine() {
     if (Serial.available() > 0) {
       char c = Serial.read();
       if (c == '\n') { // Check for newline character
-       
         break; // Exit loop when newline is received
       }
       line += c; // Append character to line
@@ -17,3 +16,4 @@ String readSerialLine() {
   line.trim(); // Remove leading and trailing whitespaces
   return line;
 }
+

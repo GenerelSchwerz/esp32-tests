@@ -1,4 +1,5 @@
-#include <Arduino.h>
+// #include <Arduino.h>
+#include "esp_system.h"
 
 
 extern const uint8_t index_html_start[] asm("_binary_src_frontend_index_html_start");

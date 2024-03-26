@@ -10,8 +10,6 @@
 #include "endpoints.h" // Include the header file for endpoint handlers
 
 
-// weird structure due to not understanding PlatformIO's build system.
-// I'll fix it later.
 
 bool server_started = false;
 httpd_handle_t server = NULL;
