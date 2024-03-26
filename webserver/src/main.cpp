@@ -13,13 +13,10 @@
 #include "constants.h" // Assuming this contains constants used in your project
 #include "helper.h"    // Utility functions you've defined
 #include "endpoints.h" // Endpoint handlers for the HTTP server
+#include "sensors.h"   // Sensor functions
 
-static const char *TAG = "wifi softAP";
+static const char *TAG = "root";
 
-httpd_handle_t start_webserver(void);
-void stop_webserver(httpd_handle_t server);
-void wifi_init_sta(const char* ssid, const char* passphrase);
-void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
 
 void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
@@ -29,7 +26,12 @@ void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         ESP_LOGI(TAG, "Disconnected. Trying to reconnect...");
         esp_wifi_connect();
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    }
+}
+
+void ip_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
         ESP_LOGI(TAG, "Got IP:" IPSTR, IP2STR(&event->ip_info.ip));
     }
@@ -38,15 +40,16 @@ void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id
 
 void wifi_init_sta(const char *ssid, const char *password)
 {
-   esp_netif_create_default_wifi_sta();
+    esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
 
     wifi_config_t wifi_config = {};
+
     strncpy((char*)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     strncpy((char*)wifi_config.sta.password, password, sizeof(wifi_config.sta.password));
 
@@ -91,26 +94,42 @@ extern "C" void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    // ESP_ERROR_CHECK(esp_netif_init());
+    // ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    esp_log_level_set("*", ESP_LOG_ERROR);
+    // // esp_log_level_set("*", ESP_LOG_ERROR);
 
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    // ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
 
-    char ssid[32];
-    char password[64];
+    // char ssid[32];
+    // char password[64];
 
-    promptResponse("Enter SSID: ", ssid, sizeof(ssid));
+    // promptResponse("Enter SSID: ", ssid, sizeof(ssid));
+    // ESP_LOGI(TAG, "Got SSID: %s", ssid);
 
-    printf("Got SSID: %s\n", ssid);
+    // promptResponse("Enter password: ", password, sizeof(password));
+    // ESP_LOGI(TAG, "Got password: %s", password);
 
-    promptResponse("Enter password: ", password, sizeof(password));
+    // wifi_init_sta(ssid, "");
+    // ESP_LOGI(TAG, "Connected to AP. Starting web server...");
 
-    printf("Got password: %s\n", password);
+    // // The server can be stopped using stop_webserver(server);
+    // httpd_handle_t server = start_webserver();
+    // ESP_LOGI(TAG, "Web server started!");
 
-    wifi_init_sta(ssid, password);
 
-    httpd_handle_t server = start_webserver();
-    // The server can be stopped using stop_webserver(server);
+    
+    // Initialize sensor
+    sensor_init();
+
+    ESP_LOGI(TAG, "Sensor initialized! Starting sensor task...");
+
+    
+    xTaskCreate(&sensor_report,        // Task function
+                "hc-sensor-task",    // Task name
+                4096,                // Stack size (bytes)
+                (void*) 500,         // Task parameters
+                1,                   // Priority (1 is lowest priority)
+                NULL);               // Task handle
+
 }

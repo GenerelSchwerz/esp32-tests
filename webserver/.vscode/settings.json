@@ -6,6 +6,7 @@
         "*.cuh": "cuda-cpp",
         "esp_intr_alloc.h": "c",
         "*.tcc": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "cstdint": "cpp"
     }
 }

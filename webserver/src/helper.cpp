@@ -1,6 +1,7 @@
 // #include <Arduino.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h> // for isspace
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -9,40 +10,50 @@
 #include "driver/uart.h" // Include UART driver header file
 
 
-void promptResponse(const char* msg, char* ssid, size_t max_len) {
-    printf(msg);
-    fflush(stdout); // Ensure 'Please enter SSID' message is printed immediately
+void promptResponse(const char* msg, char* wanted, size_t max_len) {
+    printf("%s", msg);
+    fflush(stdout); // Ensure message is printed immediately
 
- 
-   // Loop until input buffer ends with '\n'
+    int pos = 0;
     while (1) {
-        // Read input
-        if (fgets(ssid, max_len, stdin) == NULL) {
-            ESP_LOGE("INPUT", "Failed to read SSID from input");
-            vTaskDelay(500 / portTICK_PERIOD_MS);
-            continue;
-        }
+        int data = getchar(); // Read data from stdin
 
-        // Check if the input ends with '\n'
-        size_t len = strlen(ssid);
-        if (len > 0 && ssid[len - 1] == '\n') {
-            // Remove newline character
-            ssid[len - 1] = '\0';
-            break; // Exit the loop
-        }
+        if (data != EOF) {
+            if (data == '\n' || pos >= max_len - 1) {
+                // Exit loop when newline is received or buffer is full
+                break;
+            }
 
-        // If the input is too long for the buffer, clear the input stream
-        if (len == max_len - 1 && ssid[len - 1] != '\n') {
-            int c;
-            while ((c = getchar()) != '\n' && c != EOF);
-            ESP_LOGE("INPUT", "Input too long. Please enter a shorter value.");
-            // Prompt the user again
-            printf("%s", msg);
-            fflush(stdout);
+            wanted[pos++] = data; // Append character to wanted buffer
+        } else {
+            vTaskDelay(10 / portTICK_PERIOD_MS); // Delay a bit if EOF is received
         }
     }
 
+    wanted[pos] = '\0'; // Null-terminate the string
+
+    // Remove leading and trailing whitespaces
+    char *start = wanted;
+    while (*start && isspace(*start)) {
+        start++;
+    }
+
+    char *end = wanted + strlen(start) - 1;
+    while (end > start && isspace(*end)) {
+        *end-- = '\0';
+    }
+
+    // Copy the trimmed string back to wanted
+    if (start != wanted) {
+        memmove(wanted, start, end - start + 2);
+    }
+
+
+
+    // clear stdin buffer
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
-    // fflush(stdin); // Clear the input buffer
+
+    printf("\n");
+    fflush(stdout);
 }
